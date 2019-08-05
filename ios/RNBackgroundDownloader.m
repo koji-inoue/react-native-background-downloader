@@ -26,6 +26,8 @@ static CompletionHandler storedCompletionHandler;
     NSDate *lastProgressReport;
 }
 
+NSInteger const THROTTLE = 0.017;
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue
@@ -67,6 +69,7 @@ RCT_EXPORT_MODULE();
         NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
         NSString *sessonIdentifier = [bundleIdentifier stringByAppendingString:@".backgrounddownloadtask"];
         sessionConfig = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:sessonIdentifier];
+        sessionConfig.HTTPMaximumConnectionsPerHost = 1;
         downloadOperationsQueue = [[NSOperationQueue alloc] init];
         progressReports = [[NSMutableDictionary alloc] init];
         lastProgressReport = [[NSDate alloc] init];
@@ -233,7 +236,7 @@ RCT_EXPORT_METHOD(checkForExistingDownloads: (RCTPromiseResolveBlock)resolve rej
         }
         
         NSDate *now = [[NSDate alloc] init];
-        if ([now timeIntervalSinceDate:lastProgressReport] > 1.5 && progressReports.count > 0) {
+        if ([now timeIntervalSinceDate:lastProgressReport] > THROTTLE && progressReports.count > 0) {
             if (self.bridge) {
                 [self sendEventWithName:@"downloadProgress" body:[progressReports allValues]];
             }

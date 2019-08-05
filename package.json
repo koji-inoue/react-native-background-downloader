@@ -25,6 +25,7 @@
     "index.js",
     "lib/",
     "ios/",
+    "react-native-background-downloader.podspec",
     "android/build.gradle",
     "android/src/"
   ],
