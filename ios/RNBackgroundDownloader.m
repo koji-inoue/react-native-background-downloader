@@ -85,6 +85,9 @@ RCT_EXPORT_MODULE();
 
 - (void)removeTaskFromMap: (NSURLSessionTask *)task {
     NSNumber *taskId = @(task.taskIdentifier);
+	if (taskId == nil) {
+		return;
+	}
     RNBGDTaskConfig *taskConfig = taskToConfigMap[taskId];
     [taskToConfigMap removeObjectForKey:taskId];
     [urlToConfigMap removeObjectForKey:task.currentRequest.URL.absoluteString];
