@@ -132,7 +132,6 @@ RCT_EXPORT_METHOD(download: (NSDictionary *) options) {
     taskToConfigMap[@(task.taskIdentifier)] = taskConfig;
     idToTaskMap[identifier] = task;
     idToPercentMap[identifier] = @0.0;
-    
     [task resume];
 }
 
@@ -146,6 +145,10 @@ RCT_EXPORT_METHOD(pauseTask: (NSString *)identifier) {
 RCT_EXPORT_METHOD(resumeTask: (NSString *)identifier) {
     NSURLSessionDownloadTask *task = idToTaskMap[identifier];
     if (task != nil && task.state == NSURLSessionTaskStateSuspended) {
+		RNBGDTaskConfig *taskCofig = taskToConfigMap[@(task.taskIdentifier)];
+		if (taskCofig != nil) {
+			taskCofig.reportedBegin = NO;
+		}
         [task resume];
     }
 }
@@ -182,7 +185,7 @@ RCT_EXPORT_METHOD(checkForExistingDownloads: (RCTPromiseResolveBlock)resolve rej
                                       @"totalBytes": [NSNumber numberWithLongLong:foundTask.countOfBytesExpectedToReceive],
                                       @"percent": percent
                                       }];
-                taskConfig.reportedBegin = YES;
+                taskConfig.reportedBegin = NO;
                 taskToConfigMap[@(task.taskIdentifier)] = taskConfig;
                 idToTaskMap[taskConfig.id] = task;
                 idToPercentMap[taskConfig.id] = percent;

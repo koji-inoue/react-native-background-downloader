@@ -47,6 +47,8 @@ public class RNBackgroundDownloaderModule extends ReactContextBaseJavaModule imp
   private static final int TASK_CANCELING = 2;
   private static final int TASK_COMPLETED = 3;
 
+  private static final Long PROGRESS_INTERVAL = 170L;
+
   private static Map<Status, Integer> stateMap = new HashMap<Status, Integer>() {{
     put(Status.DOWNLOADING, TASK_RUNNING);
     put(Status.COMPLETED, TASK_COMPLETED);
@@ -72,7 +74,8 @@ public class RNBackgroundDownloaderModule extends ReactContextBaseJavaModule imp
 
     loadConfigMap();
     FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(this.getReactApplicationContext())
-            .setDownloadConcurrentLimit(4)
+            .setDownloadConcurrentLimit(1)
+            .setProgressReportingInterval(PROGRESS_INTERVAL)
             .build();
     fetch = Fetch.Impl.getInstance(fetchConfiguration);
     fetch.addListener(this);
@@ -190,6 +193,10 @@ public class RNBackgroundDownloaderModule extends ReactContextBaseJavaModule imp
   public void resumeTask(String identifier) {
     Integer requestId = idToRequestId.get(identifier);
     if (requestId != null) {
+      RNBGDTaskConfig config = requestIdToConfig.get(requestId);
+      if (config != null) {
+        config.reportedBegin = false;
+      }
       fetch.resume(requestId);
     }
   }
@@ -222,7 +229,7 @@ public class RNBackgroundDownloaderModule extends ReactContextBaseJavaModule imp
             foundIds.pushMap(params);
 
             idToRequestId.put(config.id, download.getId());
-            config.reportedBegin = true;
+            config.reportedBegin = false;
           } else {
             fetch.delete(download.getId());
           }
@@ -260,7 +267,7 @@ public class RNBackgroundDownloaderModule extends ReactContextBaseJavaModule imp
       params.putDouble("percent", ((double)download.getProgress()) / 100);
       progressReports.put(config.id, params);
       Date now = new Date();
-      if (now.getTime() - lastProgressReport.getTime() > 1500) {
+      if (now.getTime() - lastProgressReport.getTime() > PROGRESS_INTERVAL) {
         WritableArray reportsArray = Arguments.createArray();
         for (WritableMap report : progressReports.values()) {
           reportsArray.pushMap(report);
